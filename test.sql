@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 17-03-2021 a las 00:07:36
+-- Tiempo de generación: 17-03-2021 a las 23:49:12
 -- Versión del servidor: 10.4.17-MariaDB
 -- Versión de PHP: 8.0.2
 
@@ -24,33 +24,21 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `categoria`
+-- Estructura de tabla para la tabla `categorias`
 --
 
-CREATE TABLE `categoria` (
+CREATE TABLE `categorias` (
   `id` int(10) UNSIGNED NOT NULL,
   `nombre` varchar(30) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---
--- Volcado de datos para la tabla `categoria`
---
-
-INSERT INTO `categoria` (`id`, `nombre`) VALUES
-(4, 'EDITORIAL'),
-(7, 'INFANTIL'),
-(5, 'MANUAL'),
-(2, 'NOVELA'),
-(3, 'POLICIAL'),
-(8, 'PSICOLOGIA');
-
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `libro`
+-- Estructura de tabla para la tabla `libros`
 --
 
-CREATE TABLE `libro` (
+CREATE TABLE `libros` (
   `id` int(10) UNSIGNED NOT NULL,
   `nombre` varchar(30) NOT NULL,
   `descripcion` text NOT NULL,
@@ -58,25 +46,13 @@ CREATE TABLE `libro` (
   `persona_id` int(10) UNSIGNED DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
---
--- Volcado de datos para la tabla `libro`
---
-
-INSERT INTO `libro` (`id`, `nombre`, `descripcion`, `categoria_id`, `persona_id`) VALUES
-(2, 'LIBRO_1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.', 2, 2),
-(3, 'LIBRO_2', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', 4, NULL),
-(4, 'BAMBI', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', 7, 13),
-(10, 'HARRY POTTER', 'Lorem ipsum dolor sit amet.', 2, 12),
-(11, 'LIBRO3', 'Lorem ipsum dolor sit amet.', 3, NULL),
-(18, 'LIBRO4', 'Lorem ipsum dolor sit amet.', 2, NULL);
-
 -- --------------------------------------------------------
 
 --
--- Estructura de tabla para la tabla `persona`
+-- Estructura de tabla para la tabla `personas`
 --
 
-CREATE TABLE `persona` (
+CREATE TABLE `personas` (
   `id` int(10) UNSIGNED NOT NULL,
   `nombre` varchar(30) NOT NULL,
   `apellido` varchar(30) NOT NULL,
@@ -85,40 +61,29 @@ CREATE TABLE `persona` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- Volcado de datos para la tabla `persona`
---
-
-INSERT INTO `persona` (`id`, `nombre`, `apellido`, `email`, `alias`) VALUES
-(2, 'Juan', 'Perez', 'juan@perez.com', 'jperez.22'),
-(12, 'Maria', 'Rodriguez', 'maria@rodriguez.com', 'mrodriguez10'),
-(13, 'Maximo', 'Cosetti', 'mcosetti@gmail.com', 'fanDeRavenna96'),
-(14, 'Tomas', 'Martinez', 'tomas@martinez.com', 'tmartinez'),
-(15, 'Fulano', 'Detal', 'fulanito22@mail.com', 'fulanodetal');
-
---
 -- Índices para tablas volcadas
 --
 
 --
--- Indices de la tabla `categoria`
+-- Indices de la tabla `categorias`
 --
-ALTER TABLE `categoria`
+ALTER TABLE `categorias`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `nombre` (`nombre`);
 
 --
--- Indices de la tabla `libro`
+-- Indices de la tabla `libros`
 --
-ALTER TABLE `libro`
+ALTER TABLE `libros`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `nombre` (`nombre`),
   ADD KEY `id_persona` (`persona_id`) USING BTREE,
   ADD KEY `id_categoria` (`categoria_id`) USING BTREE;
 
 --
--- Indices de la tabla `persona`
+-- Indices de la tabla `personas`
 --
-ALTER TABLE `persona`
+ALTER TABLE `personas`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `email` (`email`) USING HASH;
 
@@ -127,21 +92,21 @@ ALTER TABLE `persona`
 --
 
 --
--- AUTO_INCREMENT de la tabla `categoria`
+-- AUTO_INCREMENT de la tabla `categorias`
 --
-ALTER TABLE `categoria`
+ALTER TABLE `categorias`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
--- AUTO_INCREMENT de la tabla `libro`
+-- AUTO_INCREMENT de la tabla `libros`
 --
-ALTER TABLE `libro`
+ALTER TABLE `libros`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
--- AUTO_INCREMENT de la tabla `persona`
+-- AUTO_INCREMENT de la tabla `personas`
 --
-ALTER TABLE `persona`
+ALTER TABLE `personas`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
@@ -149,11 +114,11 @@ ALTER TABLE `persona`
 --
 
 --
--- Filtros para la tabla `libro`
+-- Filtros para la tabla `libros`
 --
-ALTER TABLE `libro`
-  ADD CONSTRAINT `libro_ibfk_1` FOREIGN KEY (`categoria_id`) REFERENCES `categoria` (`id`),
-  ADD CONSTRAINT `libro_ibfk_2` FOREIGN KEY (`persona_id`) REFERENCES `persona` (`id`);
+ALTER TABLE `libros`
+  ADD CONSTRAINT `libros_ibfk_1` FOREIGN KEY (`categoria_id`) REFERENCES `categorias` (`id`),
+  ADD CONSTRAINT `libros_ibfk_2` FOREIGN KEY (`persona_id`) REFERENCES `personas` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
