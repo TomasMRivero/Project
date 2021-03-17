@@ -1,235 +1,189 @@
 const bodyParser = require('body-parser');
+const { query } = require('express');
 const express = require('express');
 const mysql = require('mysql');
+const util = require ('util');
 
 const app = express();
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 const connection = mysql.createConnection({
     host: 'localhost',
-    port: 3306,
     user: 'root',
     password: '',
     database: 'test'
 });
 
-app.post('/categoria', (req, res) => {
+connection.connect((error) => {
+    if(error) {
+        throw error;
+    }
+     console.log('Conexión con la base de datos MySQL establecida');
+});
+
+// permite el uso de async-await en mysql
+const qy = util.promisify(connection.query).bind(connection);
+
+app.post('/categorias', async (req, res) => {
+    try{
+    
+    //Validación del envío correcto de la información
     if (!req.body.nombre) {
-        res.status(413);
-        res.json({ mensaje: 'Faltan datos' });
-        return;
+        throw new Error ('No se envió el nombre');
     }
 
-    const setParams = {
-        nombre: req.body.nombre
-    };
-
-    connection.query('INSERT INTO `categorias` SET ?', [setParams], (error, results) => {
-        if (error) {
-            res.status(413);
-
-            switch (error.code) {
-                case 'ER_DUP_ENTRY':
-                    res.json({ mensaje: 'Ese nombre de categoria ya existe' });
-                    break;
-                default:
-                    res.end({ mensaje: 'Error inesperado' });
-                    break;
-            }
-            
-            return;
-        }
-
-        res.status(200);
-        res.json({
-            id: results.insertId,
-            ...setParams
-        });
-    });
-});
-
-app.get('/categoria', (_, res) => {
-    connection.query('SELECT * FROM `categorias`', (error, results) => {
-        if (error) {
-            res.status(413);
-            res.json([]);
-            return;
-        }
-    
-        res.status(200);
-        res.json(results);
-    });
-});
-
-app.get('/categoria/:id', (req, res) => {
-    const searchParams = {
-        id: req.params.id
-    };
-
-    connection.query('SELECT * FROM `categorias` WHERE ?', [searchParams], (error, results) => {
-        if (error) {
-            res.status(413);
-            res.json({ mensaje: 'Error inesperado' });
-            return;
-        }
-
-        if (results.length === 0) {
-            res.status(413);
-            res.json({ mensaje: 'Categoria no encontrada' });
-            return;
-        }
-    
-        res.status(200);
-        res.json(results[0]);
-    });
-});
-
-app.delete('/categoria/:id', (req, res) => {
-    // TODO
-    res.status(501).json({ message: 'Not implemented' });
-});
-
-
-// Personas
-
-// POST '/persona' recibe: {nombre: string, apellido: string, alias: string, email: string}
-// retorna: status: 200, {id: numerico, nombre: string, apellido: string, alias: string, email: string}
-// error: status: 413, {mensaje: <descripcion del error>} que puede ser: "faltan datos", "el email ya se encuentra registrado", "error inesperado"
-app.post('/persona', (req, res) => {
-    if (!req.body.nombre || !req.body.apellido || !req.body.alias || !req.body.email) {
-        res.status(413);
-        res.json({ mensaje: 'Faltan datos' });
-        return;
+    // Verificación de existencia previa del nombre
+    let query = 'SELECT id FROM categorias WHERE nombre = ?'
+    let respuesta = await qy(query, [req.body.nombre]);
+    if (respuesta.length > 0) {
+        throw new Error ('El género ya existe');
     }
 
-    const setParams = {
-        nombre: req.body.nombre,
-        apellido: req.body.apellido,
-        alias: req.body.alias,
-        email: req.body.email
-    };
+    //Si el género no existe, se procede a guardar el registro
+    query = 'INSERT INTO categorias (nombre) VALUE (?)';
+    respuesta = await qy(query, [req.body.nombre]);
 
-    connection.query('INSERT INTO `personas` SET ?', [setParams], (error, results) => {
-        if (error) {
-            res.status(413);
+    res.send({"respuesta": respuesta});
 
-            switch (error.code) {
-                case 'ER_DUP_ENTRY':
-                    res.json({ mensaje: 'El email ya se encuentra registrado' });
-                    break;
-                default:
-                    res.end({ mensaje: 'Error inesperado' });
-                    break;
-            }
-            
-            return;
-        }
-
-        res.status(200);
-        res.json({
-            id: results.insertId,
-            ...setParams
-        });
-    });
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }
 });
 
-app.get('/persona', (_, res) => {
-    connection.query('SELECT * FROM `personas`', (error, results) => {
-        if (error) {
-            res.status(413);
-            res.json([]);
-            return;
-        }
-    
-        res.status(200);
-        res.json(results);
-    });
+app.get('/categorias', async (req, res) => {
+    try{
+    // Se consulta si existe el nombre buscado y se almacena la respuesta
+    const query = 'SELECT * FROM categorias';
+    const respuesta = await qy(query);
+    res.send({"respuesta": respuesta});
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }
 });
 
-app.get('/persona/:id', (req, res) => {
-    const searchParams = {
-        id: req.params.id
-    };
-
-    connection.query('SELECT * FROM `personas` WHERE ?', [searchParams], (error, results) => {
-        if (error) {
-            res.status(413);
-            res.json({ mensaje: 'Error inesperado' });
-            return;
-        }
-
-        if (results.length === 0) {
-            res.status(413);
-            res.json({ mensaje: 'No se encuentra esa persona' });
-            return;
-        }
-    
-        res.status(200);
-        res.json(results[0]);
-    });
+app.get('/categorias/:id', async (req, res) => {
+    try{
+        const query = 'SELECT * FROM categorias WHERE id = ?';
+        const respuesta = await qy(query, [req.params.id]);
+        res.send({"respuesta": respuesta});
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }    
 });
 
-app.put('/persona/:id', (req, res) => {
-    // La especificación de la tarea denota que este método puede recibir `email`
-    // Sin embargo, también dice que el `email` no se puede actualizar
-    // Pero no especifica que error se debería retornar en caso de existir
-    // En este método el `email` es simplemente ignorado
+app.delete('/categorias/:id', async (req, res) => {
+    try{
+    //Verificación de vinculación foránea, de existir, no se permite borrar
+    let query = 'SELECT * FROM libros WHERE id_categoria = ?'
+    let respuesta = await qy(query, [req.params.id]);
 
-    const searchParams = {
-        id: req.params.id
-    };
-    const setParams = {};
+    if (respuesta.length > 0) {
+        throw new Error ('El género se está usando en la tabla libros, no se puede borrar');
+    }
+    query = 'DELETE FROM categorias WHERE id = ?'
+    respuesta = await qy(query, [req.params.id]);
+    res.send({"respuesta" : "El registro se borró correctamente"});
 
-    // `setParams` es creado sólo con las propiedades que se quieren cambiar
-    if (req.body.nombre) setParams.nombre = req.body.nombre;
-    if (req.body.apellido) setParams.apellido = req.body.apellido;
-    if (req.body.alias) setParams.alias = req.body.alias;
 
-    connection.query(
-        `
-        UPDATE personas
-        SET ?
-        WHERE ?
-        `,
-        [setParams, searchParams],
-        (error, result) => {
-            console.log(error, result);
-
-            if (error) {
-                res.status(413);
-                res.json({ mensaje: 'Error inesperado' });
-                return;
-            }
-
-            // Aquí nos encontramos en el medio de una triste situación
-            // Queremos retornar el objeto actualizado, sin embargo,
-            // los queries UPDATE de SQL no permiten retornar el
-            // objeto modificado. La variable `results` no es útil para nosotros.
-            //
-            // Para acomodar este requerimiento, tenemos que realizar otro
-            // query para obtener la fila actualizada
-            connection.query('SELECT * FROM `personas` WHERE ?', [searchParams], (error, results) => {
-                if (error) {
-                    res.status(413);
-                    res.json({ mensaje: 'Error inesperado' });
-                    return;
-                }
-
-                // No hay manera the el array `results` esté vacio
-
-                res.status(200);
-                res.json(results[0]);
-            });
-        }
-    );
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }        
 });
 
-app.delete('/persona/:id', (req, res) => {
-    // TODO
-    res.status(501).json({ message: 'Not implemented' });
+// PERSONA
+
+app.post('/personas', async (req, res) => {
+    try{
+        if (!req.body.nombre || !req.body.apellido || !req.body.email || !req.body.alias) {
+            throw new Error ('No se enviaron los datos obligatorios (Nombre, Apellido, Email, Alias)');
+        }
+        //Verificación de que el email no se repita
+        /*No es necesario verificar esto mediante una consulta,
+        se restringió el valor del campo a tipo único*/
+
+        // Si el mail no está repetido, se continúa con el ingreso de datos
+        query ='INSERT INTO personas (nombre, apellido, email, alias) VALUES (?, ?, ?, ?)'
+        respuesta = await qy(query, [req.body.nombre, req.body.apellido, req.body.email, req.body.alias])
+        res.send({"respuesta": [req.body.nombre, req.body.apellido, req.body.email, req.body.alias]})
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }            
+});
+
+app.get('/personas', async (req, res) => {
+    try{
+        const query = 'SELECT * FROM personas'
+        const respuesta = await qy(query);
+        res.send({"respuesta": respuesta});
+    }
+
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }         
+});
+
+app.get('/personas/:id', async (req, res) => {
+    try {
+        const query = 'SELECT * FROM personas WHERE id = ?';
+        const respuesta = await qy(query, [req.params.id]);
+        res.send({"respuesta" : respuesta});
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }             
+});
+
+app.put('/personas/:id', async (req, res) => {
+    try{
+    //Se verifica que se envíen todos los datos (excepto el mail que no puede modificarse)
+    if(!req.body.nombre || !req.body.apellido || !req.body.alias) {
+        throw new Error ('Falta enviar uno o más datos a actualizar: nombre, apellido, alias')
+    }
+
+    const query = 'UPDATE personas SET nombre = ?, apellido = ?, alias = ? WHERE id = ?'
+    const respuesta = await qy(query, [req.body.nombre, req.body.apellido, req.body.alias, req.params.id]);
+    res.send({"respuesta": ["Se han actualizado todos los datos excepto el email que no se puede modificar", respuesta]
+});
+    }
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    }      
+});
+
+app.delete('/personas/:id', async (req, res) =>{
+    try {
+        let query = 'SELECT * FROM libros WHERE id_persona = ?';
+        let respuesta = await qy(query, [req.params.id]);
+        if (respuesta.length > 0){
+            throw new Error ("Esta persona tiene un libro en préstamo, no puede eliminarse")
+        }
+
+        query = 'DELETE FROM personas WHERE id = ?'
+        respuesta = await qy(query, [req.params.id]);
+        res.send({"respuesta": "El registro se ha eliminado correctamente"});
+    }
+
+    catch(e) {
+        console.error(e.message);
+        res.status(413).send({"Error": e.message});
+    } 
 });
 
 app.listen(process.env.PORT || 3000, () => {
     console.log('http://localhost:3000');
+
 });
